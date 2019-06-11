@@ -1,6 +1,5 @@
-﻿using Microsoft.AspNetCore.Blazor;
-using Microsoft.AspNetCore.Blazor.Components;
-using Microsoft.AspNetCore.Blazor.RenderTree;
+﻿using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.RenderTree;
 using Microsoft.JSInterop;
 using System;
 using System.Collections.Generic;
@@ -11,7 +10,7 @@ namespace TWyTec.Blazor
 {
     public class SplitViewPane : IComponent, IHandleEvent
     {
-        bool rendererIsWorked = false;
+        bool _rendererIsWorked = false;
         private RenderHandle _renderHandle;
         private double _paneWidth;
         private string _paneId;
@@ -54,7 +53,7 @@ namespace TWyTec.Blazor
         [Parameter]
         bool IsPaneOpen { get; set; }
         bool _isPaneOpen = true;
-        bool setIsPaneOpen = false;
+        bool _setIsPaneOpen = false;
 
         public void TogglePane()
         {
@@ -62,21 +61,21 @@ namespace TWyTec.Blazor
             StateHasChanged();
         }
 
-        public void Init(RenderHandle renderHandle)
+        public void Configure(RenderHandle renderHandle)
         {
             _paneId = Guid.NewGuid().ToString();
             _renderHandle = renderHandle;
         }
 
-        public void SetParameters(ParameterCollection p)
+        public Task SetParametersAsync(ParameterCollection p)
         {
             p.TryGetValue(RenderTreeBuilder.ChildContent, out _childContent);
             p.TryGetValue("class", out _cssClass);
             p.TryGetValue("style", out _cssStyle);
 
-            if (setIsPaneOpen == false)
+            if (_setIsPaneOpen == false)
             {
-                setIsPaneOpen = true;
+                _setIsPaneOpen = true;
                 _isPaneOpen = p.GetValueOrDefault(nameof(IsPaneOpen), _isPaneOpen);
             }
             
@@ -87,19 +86,21 @@ namespace TWyTec.Blazor
             
             _dict = p.ToDictionary();
             StateHasChanged();
+
+            return Task.FromResult(true);
         }
 
-        void IHandleEvent.HandleEvent(EventHandlerInvoker binding, UIEventArgs args)
-            => Based.IHandleEvent.HandleEvent(binding, args, StateHasChanged);
+        Task IHandleEvent.HandleEventAsync(EventCallbackWorkItem binding, object args)
+            => Based.HandleEventExtensions.HandleEventAsync(binding, args, StateHasChanged);
 
         private void StateHasChanged()
         {
-            if (rendererIsWorked)
+            if (_rendererIsWorked)
             {
                 return;
             }
 
-            rendererIsWorked = true;
+            _rendererIsWorked = true;
             _renderHandle.Render(RenderTree);
         }
 
@@ -157,7 +158,7 @@ namespace TWyTec.Blazor
 
             builder.CloseElement();
             
-            rendererIsWorked = false;
+            _rendererIsWorked = false;
         }
     }
 }

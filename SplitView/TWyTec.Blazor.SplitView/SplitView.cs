@@ -1,6 +1,5 @@
-﻿using Microsoft.AspNetCore.Blazor;
-using Microsoft.AspNetCore.Blazor.Components;
-using Microsoft.AspNetCore.Blazor.RenderTree;
+﻿using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.RenderTree;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,7 +9,7 @@ namespace TWyTec.Blazor
 {
     public class SplitView : IComponent, IHandleEvent
     {
-        private bool rendererIsWorked = false;
+        private bool _rendererIsWorked = false;
         private RenderHandle _renderHandle;
         private IReadOnlyDictionary<string, object> _dict;
         private string _cssClass;
@@ -23,12 +22,12 @@ namespace TWyTec.Blazor
         string SplitViewClass { get; set; }
         string _spClass = "TWyTecSplitView";
         
-        void IComponent.Init(RenderHandle renderHandle)
+        void IComponent.Configure(RenderHandle renderHandle)
         {
             _renderHandle = renderHandle;
         }
 
-        void IComponent.SetParameters(ParameterCollection p)
+        Task IComponent.SetParametersAsync(ParameterCollection p)
         {
             p.TryGetValue(RenderTreeBuilder.ChildContent, out _childContent);
             p.TryGetValue("class", out _cssClass);
@@ -36,19 +35,21 @@ namespace TWyTec.Blazor
 
             _dict = p.ToDictionary();
             StateHasChanged();
+
+            return Task.FromResult(true);
         }
 
-        void IHandleEvent.HandleEvent(EventHandlerInvoker binding, UIEventArgs args)
-            => Based.IHandleEvent.HandleEvent(binding, args, StateHasChanged);
+        Task IHandleEvent.HandleEventAsync(EventCallbackWorkItem binding, object args)
+            => Based.HandleEventExtensions.HandleEventAsync(binding, args, StateHasChanged);
 
         private void StateHasChanged()
         {
-            if (rendererIsWorked)
+            if (_rendererIsWorked)
             {
                 return;
             }
 
-            rendererIsWorked = true;
+            _rendererIsWorked = true;
             _renderHandle.Render(RenderTree);
         }
 
@@ -71,7 +72,7 @@ namespace TWyTec.Blazor
 
             builder.CloseElement();
 
-            rendererIsWorked = false;
+            _rendererIsWorked = false;
         }
     }
 }

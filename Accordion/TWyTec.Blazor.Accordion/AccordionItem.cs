@@ -1,8 +1,5 @@
-﻿using Microsoft.AspNetCore.Blazor.Components;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
+using Microsoft.AspNetCore.Components;
 
 namespace TWyTec.Blazor
 {
@@ -11,12 +8,13 @@ namespace TWyTec.Blazor
         [Parameter]
         protected string Header { get; set; }
 
-        public void Init(RenderHandle renderHandle)
+        public void Configure(RenderHandle renderHandle)
         {
         }
 
-        public void SetParameters(ParameterCollection parameters)
+        public Task SetParametersAsync(ParameterCollection parameters)
         {
+            return Task.FromResult(true);
         }
     }
 }
