@@ -15,13 +15,13 @@
     </ul>
 
     <p style="color: gainsboro;">
-        msg: @msg
+        msg: @_msg
     </p>
 </div>
 
 
 
-<ContentDialog ref="contentDlg" aria-labelledby="myTestedModal">
+<ContentDialog ref="ContentDlg" aria-labelledby="myTestedModal">
     <div style="text-align: center;">
         <p id="myTestedModal">Hallo World</p>
         <button class="btn btn-primary" onclick="@CloseContentDialog">
@@ -32,27 +32,27 @@
 
 @functions{
 
-    string msg = "";
-    private TWyTec.Blazor.ContentDialog contentDlg { get; set; }
+    string _msg = "";
+    private TWyTec.Blazor.ContentDialog ContentDlg { get; set; }
 
     void ShowContentDialog()
     {
-        contentDlg.Show();
+        ContentDlg.Show();
     }
 
     async void ShowAwaitContentDialog()
     {
-        msg = "Dlg is open";
+        _msg = "Dlg is open";
 
-        await contentDlg.ShowAsync();
+        await ContentDlg.ShowAsync();
 
-        msg = "Dlg is close";
+        _msg = "Dlg is close";
         this.StateHasChanged();
     }
 
     void CloseContentDialog()
     {
-        contentDlg.Hide();
+        ContentDlg.Hide();
     }
 
 }

@@ -1,6 +1,5 @@
-﻿using Microsoft.AspNetCore.Blazor;
-using Microsoft.AspNetCore.Blazor.Components;
-using Microsoft.AspNetCore.Blazor.RenderTree;
+﻿using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.RenderTree;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,7 +10,7 @@ namespace TWyTec.Blazor
     public class Tab : IComponent, IHandleEvent
     {
         List<TabTree> _tabTrees;
-        private bool rendererIsWorked = false;
+        private bool _rendererIsWorked = false;
         private RenderHandle _renderHandle;
         private IReadOnlyDictionary<string, object> _dict;
         private string _cssClass;
@@ -97,19 +96,19 @@ namespace TWyTec.Blazor
 
         #region GetTabContentId
 
-        Dictionary<int, string> tabContentIds;
+        Dictionary<int, string> _tabContentIds;
 
         internal string GetTabContentId(int index)
         {
-            if (tabContentIds == null)
-                tabContentIds = new Dictionary<int, string>();
+            if (_tabContentIds == null)
+                _tabContentIds = new Dictionary<int, string>();
 
-            if (tabContentIds.ContainsKey(index))
-                return tabContentIds[index];
+            if (_tabContentIds.ContainsKey(index))
+                return _tabContentIds[index];
             else
             {
                 var id = Guid.NewGuid().ToString();
-                tabContentIds.Add(index, id);
+                _tabContentIds.Add(index, id);
                 return id;
             }
         }
@@ -118,21 +117,21 @@ namespace TWyTec.Blazor
 
         internal void StateHasChanged()
         {
-            if (rendererIsWorked)
+            if (_rendererIsWorked)
             {
                 return;
             }
 
-            rendererIsWorked = true;
+            _rendererIsWorked = true;
             _renderHandle.Render(RenderTree);
         }
 
-        void IComponent.Init(RenderHandle renderHandle)
+        void IComponent.Configure(RenderHandle renderHandle)
         {
             _renderHandle = renderHandle;
         }
 
-        void IComponent.SetParameters(ParameterCollection p)
+        Task IComponent.SetParametersAsync(ParameterCollection p)
         {
             p.TryGetValue(RenderTreeBuilder.ChildContent, out _childContent);
             p.TryGetValue("class", out _cssClass);
@@ -156,14 +155,16 @@ namespace TWyTec.Blazor
 
             _dict = p.ToDictionary();
             _renderHandle.Render(CreateTree);
+
+            return Task.FromResult(true);
         }
 
-        void IHandleEvent.HandleEvent(EventHandlerInvoker binding, UIEventArgs args)
-            => Based.IHandleEvent.HandleEvent(binding, args, StateHasChanged);
+        Task IHandleEvent.HandleEventAsync(EventCallbackWorkItem binding, object args)
+            => Based.HandleEventExtensions.HandleEventAsync(binding, args, StateHasChanged);
 
         #region Tree
 
-        int seqIndex;
+        int _seqIndex;
 
         #region CreateTree
 
@@ -225,10 +226,10 @@ namespace TWyTec.Blazor
         private void RenderTree(RenderTreeBuilder builder)
         {
             builder.Clear();
-            seqIndex = 0;
+            _seqIndex = 0;
 
-            builder.OpenElement(seqIndex++, "div");
-            builder.AddAttribute(seqIndex, "class", $"{_tabClass} {_cssClass}");
+            builder.OpenElement(_seqIndex++, "div");
+            builder.AddAttribute(_seqIndex, "class", $"{_tabClass} {_cssClass}");
 
             var anyAttr = _dict.Where(
                 k => k.Key != RenderTreeBuilder.ChildContent && k.Key != "class" &&
@@ -243,7 +244,7 @@ namespace TWyTec.Blazor
 
             foreach (var item in anyAttr)
             {
-                builder.AddAttribute(seqIndex, item.Key, item.Value);
+                builder.AddAttribute(_seqIndex, item.Key, item.Value);
             }
 
             if (_tabNavPosition == TabNavPosition.Top)
@@ -259,17 +260,17 @@ namespace TWyTec.Blazor
 
             builder.CloseElement();
 
-            rendererIsWorked = false;
+            _rendererIsWorked = false;
         }
 
         private void RenderNav(RenderTreeBuilder builder)
         {
-            builder.OpenElement(seqIndex++, "div");
-            builder.AddAttribute(seqIndex, "class", $"{_tabNavClass}");
+            builder.OpenElement(_seqIndex++, "div");
+            builder.AddAttribute(_seqIndex, "class", $"{_tabNavClass}");
 
-            builder.OpenElement(seqIndex++, "div");
-            builder.AddAttribute(seqIndex, "role", "tablist");
-            builder.AddAttribute(seqIndex, "style", "height: 100%;");
+            builder.OpenElement(_seqIndex++, "div");
+            builder.AddAttribute(_seqIndex, "role", "tablist");
+            builder.AddAttribute(_seqIndex, "style", "height: 100%;");
 
             var btnWidth = 100d / _tabTrees.Count;
 
@@ -277,27 +278,27 @@ namespace TWyTec.Blazor
             {
                 Action onclick = item.OnClick;
 
-                builder.OpenElement(seqIndex++, "button");
-                builder.AddAttribute(seqIndex, "role", "tab");
-                builder.AddAttribute(seqIndex, "aria-controls", item.Id);
+                builder.OpenElement(_seqIndex++, "button");
+                builder.AddAttribute(_seqIndex, "role", "tab");
+                builder.AddAttribute(_seqIndex, "aria-controls", item.Id);
 
                 if (_tabNavBtnStretch)
-                    builder.AddAttribute(seqIndex, "style", $"width: {btnWidth}%");
+                    builder.AddAttribute(_seqIndex, "style", $"width: {btnWidth}%");
 
-                builder.AddAttribute(seqIndex, "onclick", onclick);
+                builder.AddAttribute(_seqIndex, "onclick", onclick);
 
                 if (item.Index == _selectedIndex)
                 {
-                    builder.AddAttribute(seqIndex, "class", $"{_tabNavBtnClass} {_tabNavBtnActiveClass}");
-                    builder.AddAttribute(seqIndex, "aria-expanded", "true");
+                    builder.AddAttribute(_seqIndex, "class", $"{_tabNavBtnClass} {_tabNavBtnActiveClass}");
+                    builder.AddAttribute(_seqIndex, "aria-expanded", "true");
                 }
                 else
                 {
-                    builder.AddAttribute(seqIndex, "class", _tabNavBtnClass);
-                    builder.AddAttribute(seqIndex, "aria-expanded", "false");
+                    builder.AddAttribute(_seqIndex, "class", _tabNavBtnClass);
+                    builder.AddAttribute(_seqIndex, "aria-expanded", "false");
                 }
 
-                builder.AddContent(seqIndex, item.Header);
+                builder.AddContent(_seqIndex, item.Header);
 
                 builder.CloseElement();
             }
@@ -308,33 +309,33 @@ namespace TWyTec.Blazor
 
         private void RenderContent(RenderTreeBuilder builder)
         {
-            builder.OpenElement(seqIndex++, "div");
-            builder.AddAttribute(seqIndex, "class", _tabContentClass);
+            builder.OpenElement(_seqIndex++, "div");
+            builder.AddAttribute(_seqIndex, "class", _tabContentClass);
 
             foreach (var item in _tabTrees)
             {
-                builder.OpenElement(seqIndex++, "div");
-                builder.AddAttribute(seqIndex, "role", "tabpanel");
-                builder.AddAttribute(seqIndex, "aria-labelledby", item.Header);
-                builder.AddAttribute(seqIndex, "id", item.Id);
+                builder.OpenElement(_seqIndex++, "div");
+                builder.AddAttribute(_seqIndex, "role", "tabpanel");
+                builder.AddAttribute(_seqIndex, "aria-labelledby", item.Header);
+                builder.AddAttribute(_seqIndex, "id", item.Id);
 
                 if (item.Index == _selectedIndex)
                 {
-                    builder.AddAttribute(seqIndex, "class", $"{_tabContentItemClass} {_tabContentItemActiveClass}");
+                    builder.AddAttribute(_seqIndex, "class", $"{_tabContentItemClass} {_tabContentItemActiveClass}");
                 }
                 else
                 {
-                    builder.AddAttribute(seqIndex, "class", $"{_tabContentItemClass}");
+                    builder.AddAttribute(_seqIndex, "class", $"{_tabContentItemClass}");
                 }
 
                 if (item.Index == _selectedIndex)
-                    builder.AddAttribute(seqIndex, "style", $"transform: translate(0%, 0px); min-height: 1px;");
+                    builder.AddAttribute(_seqIndex, "style", $"transform: translate(0%, 0px); min-height: 1px;");
                 else if (item.Index > _selectedIndex)
-                    builder.AddAttribute(seqIndex, "style", $"transform: translate(100%, 0px); min-height: 1px;");
+                    builder.AddAttribute(_seqIndex, "style", $"transform: translate(100%, 0px); min-height: 1px;");
                 else if (item.Index < _selectedIndex)
-                    builder.AddAttribute(seqIndex, "style", $"transform: translate(-100%, 0px); min-height: 1px;");
+                    builder.AddAttribute(_seqIndex, "style", $"transform: translate(-100%, 0px); min-height: 1px;");
 
-                builder.AddContent(seqIndex, item.Child);
+                builder.AddContent(_seqIndex, item.Child);
                 
                 builder.CloseElement();
             }

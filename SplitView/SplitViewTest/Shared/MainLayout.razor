@@ -1,4 +1,4 @@
-@inherits BlazorLayoutComponent
+@inherits LayoutComponentBase
 
 <style>
     .myNav {
@@ -108,7 +108,7 @@
     
     TWyTec.Blazor.SplitViewPane myPane;
     
-    void BtnNavToggle()
+    public void BtnNavToggle()
     {
         
         myPane.TogglePane();

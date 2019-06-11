@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Blazor;
-using Microsoft.AspNetCore.Blazor.Components;
-using Microsoft.AspNetCore.Blazor.RenderTree;
+using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.RenderTree;
 using Microsoft.JSInterop;
 using System;
 using System.Collections.Generic;
@@ -12,7 +12,7 @@ namespace TWyTec.Blazor
     public class HorizontalStepper : IComponent, IHandleEvent
     {
         private List<HorizontalStepperTree> _stepperTrees;
-        private bool rendererIsWorked = false;
+        private bool _rendererIsWorked = false;
         private RenderHandle _renderHandle;
         private IReadOnlyDictionary<string, object> _dict;
         private string _cssClass;
@@ -126,19 +126,19 @@ namespace TWyTec.Blazor
 
         #region GetStepperContentId
 
-        Dictionary<int, string> stepperContentIds;
+        Dictionary<int, string> _stepperContentIds;
 
         internal string GetStepperContentId(int index)
         {
-            if (stepperContentIds == null)
-                stepperContentIds = new Dictionary<int, string>();
+            if (_stepperContentIds == null)
+                _stepperContentIds = new Dictionary<int, string>();
 
-            if (stepperContentIds.ContainsKey(index))
-                return stepperContentIds[index];
+            if (_stepperContentIds.ContainsKey(index))
+                return _stepperContentIds[index];
             else
             {
                 var id = Guid.NewGuid().ToString();
-                stepperContentIds.Add(index, id);
+                _stepperContentIds.Add(index, id);
                 return id;
             }
         }
@@ -147,21 +147,21 @@ namespace TWyTec.Blazor
 
         internal void StateHasChanged()
         {
-            if (rendererIsWorked)
+            if (_rendererIsWorked)
             {
                 return;
             }
 
-            rendererIsWorked = true;
+            _rendererIsWorked = true;
             _renderHandle.Render(RenderTree);
         }
 
-        void IComponent.Init(RenderHandle renderHandle)
+        void IComponent.Configure(RenderHandle renderHandle)
         {
             _renderHandle = renderHandle;
         }
 
-        void IComponent.SetParameters(ParameterCollection p)
+        Task IComponent.SetParametersAsync(ParameterCollection p)
         {
             p.TryGetValue(RenderTreeBuilder.ChildContent, out _childContent);
             p.TryGetValue("class", out _cssClass);
@@ -177,14 +177,16 @@ namespace TWyTec.Blazor
 
             _dict = p.ToDictionary();
             _renderHandle.Render(CreateTree);
+
+            return Task.FromResult(true);
         }
 
-        void IHandleEvent.HandleEvent(EventHandlerInvoker binding, UIEventArgs args)
-            => Based.IHandleEvent.HandleEvent(binding, args, StateHasChanged);
+        Task IHandleEvent.HandleEventAsync(EventCallbackWorkItem binding, object args)
+            => Based.HandleEventExtensions.HandleEventAsync(binding, args, StateHasChanged);
 
         #region Tree
 
-        int seqIndex;
+        int _seqIndex;
 
         #region CreateTree
 
@@ -249,10 +251,10 @@ namespace TWyTec.Blazor
         private void RenderTree(RenderTreeBuilder builder)
         {
             builder.Clear();
-            seqIndex = 0;
+            _seqIndex = 0;
 
-            builder.OpenElement(seqIndex++, "div");
-            builder.AddAttribute(seqIndex, "class", _stepperClass);
+            builder.OpenElement(_seqIndex++, "div");
+            builder.AddAttribute(_seqIndex, "class", _stepperClass);
 
             var anyAttr = _dict.Where(
                 k => k.Key != RenderTreeBuilder.ChildContent && k.Key != "class" &&
@@ -266,7 +268,7 @@ namespace TWyTec.Blazor
 
             foreach (var item in anyAttr)
             {
-                builder.AddAttribute(seqIndex, item.Key, item.Value);
+                builder.AddAttribute(_seqIndex, item.Key, item.Value);
             }
 
             RenderNav(builder);
@@ -274,14 +276,14 @@ namespace TWyTec.Blazor
 
             builder.CloseElement();
 
-            rendererIsWorked = false;
+            _rendererIsWorked = false;
         }
 
         private void RenderNav(RenderTreeBuilder builder)
         {
-            builder.OpenElement(seqIndex++, "div");
-            builder.AddAttribute(seqIndex, "class", $"{_stepperNavClass}");
-            builder.AddAttribute(seqIndex, "role", "tablist");
+            builder.OpenElement(_seqIndex++, "div");
+            builder.AddAttribute(_seqIndex, "class", $"{_stepperNavClass}");
+            builder.AddAttribute(_seqIndex, "role", "tablist");
             
             for (int i = 0; i < _stepperTrees.Count; i++)
             {
@@ -290,29 +292,29 @@ namespace TWyTec.Blazor
                 if (i > 0)
                 {
                     Console.WriteLine($"{i} : addline");
-                    builder.OpenElement(seqIndex++, "div");
-                    builder.AddAttribute(seqIndex, "class", $"TWyTecHorizontalStepperLine");
+                    builder.OpenElement(_seqIndex++, "div");
+                    builder.AddAttribute(_seqIndex, "class", $"TWyTecHorizontalStepperLine");
                     builder.CloseElement();
                 }
 
                 Action onclick = item.OnClick;
 
-                builder.OpenElement(seqIndex++, "div");
-                builder.AddAttribute(seqIndex, "role", "tab");
-                builder.AddAttribute(seqIndex, "aria-controls", item.Id);
+                builder.OpenElement(_seqIndex++, "div");
+                builder.AddAttribute(_seqIndex, "role", "tab");
+                builder.AddAttribute(_seqIndex, "aria-controls", item.Id);
 
                 if (_navBtnDisabled == false)
-                    builder.AddAttribute(seqIndex, "onclick", onclick);
+                    builder.AddAttribute(_seqIndex, "onclick", onclick);
 
                 if (item.Index == _selectedIndex)
                 {
-                    builder.AddAttribute(seqIndex, "class", $"{_stepperBtnClass} {_stepperNavBtnActiveClass}");
-                    builder.AddAttribute(seqIndex, "aria-expanded", "true");
+                    builder.AddAttribute(_seqIndex, "class", $"{_stepperBtnClass} {_stepperNavBtnActiveClass}");
+                    builder.AddAttribute(_seqIndex, "aria-expanded", "true");
                 }
                 else
                 {
-                    builder.AddAttribute(seqIndex, "class", _stepperBtnClass);
-                    builder.AddAttribute(seqIndex, "aria-expanded", "false");
+                    builder.AddAttribute(_seqIndex, "class", _stepperBtnClass);
+                    builder.AddAttribute(_seqIndex, "aria-expanded", "false");
                 }
 
                 RenderHeaderLable(builder, item);
@@ -325,45 +327,45 @@ namespace TWyTec.Blazor
 
         void RenderHeaderLable(RenderTreeBuilder builder, HorizontalStepperTree item)
         {
-            builder.OpenElement(seqIndex++, "div");
-            builder.AddAttribute(seqIndex, "style", $"display: flex;");
+            builder.OpenElement(_seqIndex++, "div");
+            builder.AddAttribute(_seqIndex, "style", $"display: flex;");
 
             #region Circle
 
             if (_stepperTrees.Count < 11)
             {
-                builder.OpenElement(seqIndex++, "div");
-                builder.AddAttribute(seqIndex, "style", $"margin-right: 10px; font-size: 1em;");
-                builder.AddContent(seqIndex, new MarkupString($"&#{10102 + item.Index};"));
+                builder.OpenElement(_seqIndex++, "div");
+                builder.AddAttribute(_seqIndex, "style", $"margin-right: 10px; font-size: 1em;");
+                builder.AddContent(_seqIndex, new MarkupString($"&#{10102 + item.Index};"));
                 builder.CloseElement();
             }
             
             #endregion
             
-            builder.OpenElement(seqIndex++, "div");
-            builder.AddAttribute(seqIndex, "style", $"margin-right: 10px;");
-            builder.AddContent(seqIndex, item.Header);
+            builder.OpenElement(_seqIndex++, "div");
+            builder.AddAttribute(_seqIndex, "style", $"margin-right: 10px;");
+            builder.AddContent(_seqIndex, item.Header);
             builder.CloseElement();
 
             if (_selectedIndex == item.Index)
             {
-                builder.OpenElement(seqIndex++, "div");
-                builder.AddAttribute(seqIndex, "aria-label", $"Focus");
-                builder.AddContent(seqIndex, new MarkupString("&#9737;"));
+                builder.OpenElement(_seqIndex++, "div");
+                builder.AddAttribute(_seqIndex, "aria-label", $"Focus");
+                builder.AddContent(_seqIndex, new MarkupString("&#9737;"));
                 builder.CloseElement();
             }
             else if (item.IsCompleted)
             {
-                builder.OpenElement(seqIndex++, "div");
-                builder.AddAttribute(seqIndex, "aria-label", "completed");
-                builder.AddContent(seqIndex, new MarkupString("&#x2713;"));
+                builder.OpenElement(_seqIndex++, "div");
+                builder.AddAttribute(_seqIndex, "aria-label", "completed");
+                builder.AddContent(_seqIndex, new MarkupString("&#x2713;"));
                 builder.CloseElement();
             }
             else if (item.IsCompleted == false)
             {
-                builder.OpenElement(seqIndex++, "div");
-                builder.AddAttribute(seqIndex, "aria-label", "not completed");
-                builder.AddContent(seqIndex, new MarkupString("&#10005;"));
+                builder.OpenElement(_seqIndex++, "div");
+                builder.AddAttribute(_seqIndex, "aria-label", "not completed");
+                builder.AddContent(_seqIndex, new MarkupString("&#10005;"));
                 builder.CloseElement();
             }
             
@@ -373,33 +375,33 @@ namespace TWyTec.Blazor
 
         private void RenderContent(RenderTreeBuilder builder)
         {
-            builder.OpenElement(seqIndex++, "div");
-            builder.AddAttribute(seqIndex, "class", _stepperContentClass);
+            builder.OpenElement(_seqIndex++, "div");
+            builder.AddAttribute(_seqIndex, "class", _stepperContentClass);
 
             foreach (var item in _stepperTrees)
             {
-                builder.OpenElement(seqIndex++, "div");
-                builder.AddAttribute(seqIndex, "role", "tabpanel");
-                builder.AddAttribute(seqIndex, "aria-labelledby", item.Header);
-                builder.AddAttribute(seqIndex, "id", item.Id);
+                builder.OpenElement(_seqIndex++, "div");
+                builder.AddAttribute(_seqIndex, "role", "tabpanel");
+                builder.AddAttribute(_seqIndex, "aria-labelledby", item.Header);
+                builder.AddAttribute(_seqIndex, "id", item.Id);
 
                 if (item.Index == _selectedIndex)
                 {
-                    builder.AddAttribute(seqIndex, "class", $"{_stepperInternContentItemClass} {_stepperInternContentItemActiveClass}");
+                    builder.AddAttribute(_seqIndex, "class", $"{_stepperInternContentItemClass} {_stepperInternContentItemActiveClass}");
                 }
                 else
                 {
-                    builder.AddAttribute(seqIndex, "class", $"{_stepperInternContentItemClass}");
+                    builder.AddAttribute(_seqIndex, "class", $"{_stepperInternContentItemClass}");
                 }
 
                 if (item.Index == _selectedIndex)
-                    builder.AddAttribute(seqIndex, "style", $"transform: translate(0%, 0px); min-height: 1px;");
+                    builder.AddAttribute(_seqIndex, "style", $"transform: translate(0%, 0px); min-height: 1px;");
                 else if (item.Index > _selectedIndex)
-                    builder.AddAttribute(seqIndex, "style", $"transform: translate(100%, 0px); min-height: 1px;");
+                    builder.AddAttribute(_seqIndex, "style", $"transform: translate(100%, 0px); min-height: 1px;");
                 else if (item.Index < _selectedIndex)
-                    builder.AddAttribute(seqIndex, "style", $"transform: translate(-100%, 0px); min-height: 1px;");
+                    builder.AddAttribute(_seqIndex, "style", $"transform: translate(-100%, 0px); min-height: 1px;");
 
-                builder.AddContent(seqIndex, item.Child);
+                builder.AddContent(_seqIndex, item.Child);
 
                 builder.CloseElement();
             }
